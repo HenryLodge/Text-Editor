@@ -1,129 +1,157 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+from tkinter import *
+from tkinter import filedialog
 
-# C extensions
-*.so
+# start of window
+root = Tk()
+root.title('Text Editor')
+root.geometry('1200x1050')
+root.configure(bg='gray17')
+root.resizable(0, 0)
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+global open_status_name
+open_status_name = False
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+global selected
+selected = False
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+#functons
+def new_file():
+    text.delete('1.0', END)
+    root.title('New File - Text Editor')
+    status_bar.config(text='New File        ')
+    global open_status_name
+    open_status_name = False
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+def open_file():
+    text.delete('1.0', END)
+    text_file = filedialog.askopenfilename(initialdir='C:/Users/16097/Downloads', title='Open File', filetypes=(('Text Files', '*.txt'), ('Python Files', '*.py'), ('All Files', '*.*')))
+    name = text_file
+    name = name.replace('C:/Users/16097/Downloads/', '')
+    root.title(f'{name} - Text Editor')
+    status_bar.config(text=f'{name}        ')
+    text_file = open(text_file, 'r')
+    read_text_file = text_file.read()
+    text.insert(END, read_text_file)
+    text_file.close()
+    global open_status_name
+    open_status_name = text_file
 
-# Translations
-*.mo
-*.pot
+def save_as():
+    text_file = filedialog.asksaveasfilename(defaultextension='.*', initialdir='C:/Users/16097/Downloads', title='Save File', filetypes=(('Text Files', '*.txt'), ('Python Files', '*.py'), ('All Files', '*.*')))
+    if text_file:
+        name = text_file
+        name = name.replace('C:/Users/16097/Downloads/', '')
+        root.title(f'{name} - Text Editor')
+        status_bar.config(text=f'Saved: {name}        ')
+        text_file = open(text_file, 'w')
+        text_file.write(text.get(1.0, END))
+        text_file.close()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+def save_file():
+    global open_status_name
+    if open_status_name:
+        text_file = open(open_status_name.name, 'w')
+        text_file.write(text.get(1.0, END))
+        text_file.close()
+        status_bar.config(text=f'Saved: {open_status_name}        ')
+    else:
+        save_as()
 
-# Flask stuff:
-instance/
-.webassets-cache
+def cut_text(e):
+    global selected
+    if e:
+        selected = root.clipboard_get()
+    else:
+        if text.selection_get():
+            selected = text.selection_get()
+            text.delete('sel.first', 'sel.last')
+            root.option_clear()
+            root.clipboard_append(selected)
 
-# Scrapy stuff:
-.scrapy
+def copy_text(e):
+    global selected
+    if e:
+        selected = root.clipboard_get()
+    if text.selection_get():
+        selected = text.selection_get()
+        root.option_clear()
+        root.clipboard_append(selected)
 
-# Sphinx documentation
-docs/_build/
+def paste_text(e):
+    global selected
+    if e:
+        selected = root.clipboard_get()
+    else:
+        if selected:
+            position = text.index(INSERT)
+            text.insert(position, selected)
 
-# PyBuilder
-target/
+def dark_mode():
+    global color_mode
+    color_mode = [root.configure(bg='gray17'), text.configure(bg='gray10', fg='white', insertbackground='white', selectbackground='gray10', selectforeground='white', undo=True), status_bar.configure(bg='gray13', fg='white')]
 
-# Jupyter Notebook
-.ipynb_checkpoints
+def light_mode():
+    global color_mode
+    color_mode = [root.configure(bg='light gray'), text.configure(bg='mint cream',fg='black', insertbackground='black'), status_bar.configure(bg='light gray', fg='black')]
 
-# IPython
-profile_default/
-ipython_config.py
+# main frame
+frame = Frame(root, width=1000, height=1200,bg='white')
+frame.pack(anchor=SE, pady=0)
+# scrollbar
+text_scroll = Scrollbar(frame)
+text_scroll.pack(side=RIGHT, fill=Y)
 
-# pyenv
-.python-version
+text_scroll2 = Scrollbar(frame, orient='horizontal')
+text_scroll2.pack(side=BOTTOM, fill=X)
+# textbox
+text = Text(frame, bg='gray10', fg='white', width=95, height=42, font=('Monokai', 16), insertbackground='white', selectbackground='gray10', selectforeground='white', undo=True, yscrollcommand=text_scroll.set, wrap='none' ,xscrollcommand=text_scroll2.set)
+text.pack(anchor=SE)
+# number box
+num_box = Text(root, bg='blue', text=None, fg='misty rose', width=3, height=43, font=('Monokai', 16), yscrollcommand=text_scroll.set)
+num_box.place(x=0, y=0)
+num_box.insert('1.0', '  1\n')
+num_box.configure(state=DISABLED)
+# config scrollbar
+text_scroll.config(command=text.yview)
+text_scroll2.config(command=text.xview)
+# menu
+menu = Menu(root)
+root.config(menu=menu)
+# file menu
+file_menu = Menu(menu, tearoff=False)
+menu.add_cascade(label='File', menu=file_menu)
+file_menu.add_command(label='New', command=new_file)
+file_menu.add_command(label='Open', command=open_file)
+file_menu.add_command(label='Save', command=save_file)
+file_menu.add_command(label='Save As', command=save_as)
+file_menu.add_separator()
+file_menu.add_command(label='Exit', command=root.quit)
+# edit menu
+edit_menu = Menu(menu, tearoff=False)
+menu.add_cascade(label='Edit', menu=edit_menu)
+edit_menu.add_command(label='Cut                       Ctrl+X', command=lambda: cut_text(False))
+edit_menu.add_command(label='Copy                    Ctrl+C', command=lambda: copy_text(False))
+edit_menu.add_command(label='Paste                    Ctrl+V', command=lambda: paste_text(False))
+edit_menu.add_separator()
+edit_menu.add_command(label='Undo                    Ctrl+Z', command=text.edit_undo)
+edit_menu.add_command(label='Redo                     Ctrl+Y', command=text.edit_redo)
+# color menu
+color_menu = Menu(menu, tearoff=False)
+menu.add_cascade(label='Color', menu=color_menu)
+color_menu.add_command(label='Dark Mode', command=dark_mode)
+color_menu.add_command(label='Light Mode', command=light_mode)
+# about menu
+about_menu = Menu(menu, tearoff=False)
+menu.add_cascade(label='About', menu=about_menu)
+about_menu.add_command(label='Made:                    Feb 28, 2021')
+about_menu.add_command(label="Made By:               Henry Lodge")
+# bottom status bar
+status_bar = Label(root, height=1, text='Ready        ', anchor=E, bg='gray13', fg='white')
+status_bar.pack(fill=X, side=BOTTOM, ipady=5)
+# key bindings
+root.bind('<Control-Key-x>', cut_text)
+root.bind('<Control-Key-c>', copy_text)
+root.bind('<Control-Key-v>', paste_text)
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
+root.mainloop()
